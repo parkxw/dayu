@@ -118,11 +118,6 @@ h1{font-size:17px;text-align:center;color:var(--gold);margin-bottom:10px;}
   <button onclick="importPaste()" style="width:100%;margin-top:6px;padding:8px;background:var(--s3);border:1px solid var(--gold);color:var(--gold);border-radius:8px;font-weight:700;cursor:pointer">导入粘贴的数据</button>
 </div>
 
-<div class="tools">
-  <button onclick="toggleBacktest()" style="border-color:var(--gold);color:var(--gold);font-weight:700">📊 回测当前盘（命中率/连黑）</button>
-</div>
-<div id="backtestPanel" style="margin-bottom:10px"></div>
-
 <!-- 推荐次数紫框 -->
 <div id="recHint"></div>
 
@@ -131,6 +126,11 @@ h1{font-size:17px;text-align:center;color:var(--gold);margin-bottom:10px;}
 
 <!-- 数字记录盘 -->
 <div id="recPanel"></div>
+
+<div class="tools">
+  <button onclick="toggleBacktest()" style="border-color:var(--gold);color:var(--gold);font-weight:700">📊 回测当前盘（命中率/连黑）</button>
+</div>
+<div id="backtestPanel" style="margin-bottom:10px"></div>
 
 <script>
 var WHL=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
@@ -505,8 +505,7 @@ function renderBoard(hz,betting,betLevel){
   var RIGHT=[17,34,6];
   var BOT=[31,14,20,1,33,16,24,5,10,23,8,30,11,36,13,27];
   var LEFT=[18,22,9];
-  var hintTxt=betting?(betLevel===2?'🟣 二级推荐！押闪烁热区号':'🩷 一级推荐！押闪烁热区号'):'白框=热区 · 点号码录入';
-  var html='<div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:6px">'+hintTxt+'</div>';
+  var html='';
   var cellH='height:32px;';
   html+='<div style="display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-bottom:3px">';
   TOP.forEach(function(n){html+=cell(n,cellH);});
