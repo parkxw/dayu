@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>大禹热区 · 登录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:linear-gradient(135deg,#1a0a2e,#0f1117);color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.box{width:100%;max-width:360px;background:rgba(30,33,48,.8);border:1px solid #363a4a;border-radius:16px;padding:30px 24px;}
+.logo{text-align:center;font-size:28px;font-weight:900;color:#bb44ff;margin-bottom:6px;}
+.sub{text-align:center;font-size:12px;color:#8a8f9c;margin-bottom:24px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:#8a8f9c;margin-bottom:6px;}
+.field input{width:100%;background:#1a1d28;border:1px solid #363a4a;border-radius:10px;color:#fff;padding:12px;font-size:16px;outline:none;}
+.field input:focus{border-color:#bb44ff;}
+.btn{width:100%;background:linear-gradient(135deg,#bb44ff,#8822cc);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;}
+.btn:active{opacity:.8;}
+.msg{text-align:center;font-size:13px;margin-top:14px;min-height:18px;}
+.msg.err{color:#f87171;}
+.msg.ok{color:#4ade80;}
+</style>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#bb44ff">
+</head>
+<body>
+<div class="box">
+  <div class="logo">🎯 大禹热区</div>
+  <div class="sub">物理偏差 · 热区追击系统</div>
+  <div class="field">
+    <label>账号</label>
+    <input id="u" type="text" autocomplete="off" placeholder="请输入账号">
+  </div>
+  <div class="field">
+    <label>密码</label>
+    <input id="p" type="password" autocomplete="off" placeholder="请输入密码">
+  </div>
+  <button class="btn" onclick="doLogin()">登 录</button>
+  <div class="msg" id="msg"></div>
+</div>
+
+<script>
+var SB_URL='https://tutbopofnvehjofscnom.supabase.co';
+var SB_KEY='sb_publishable_1GZtvCsNlQFn2Xyi5cE9_Q_Sp87vKB9';
+
+// 设备ID(localStorage持久)
+function getDeviceId(){
+  var id=localStorage.getItem('dayu_device');
+  if(!id){id='d_'+Date.now()+'_'+Math.random().toString(36).slice(2,10);localStorage.setItem('dayu_device',id);}
+  return id;
+}
+function sbFetch(path,opts){
+  opts=opts||{};
+  opts.headers=Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},opts.headers||{});
+  return fetch(SB_URL+'/rest/v1/'+path,opts);
+}
+function setMsg(t,cls){var m=document.getElementById('msg');m.textContent=t;m.className='msg '+(cls||'');}
+
+async function doLogin(){
+  var u=document.getElementById('u').value.trim();
+  var p=document.getElementById('p').value.trim();
+  if(!u||!p){setMsg('请输入账号和密码','err');return;}
+  setMsg('登录中...','');
+  try{
+    var r=await sbFetch('dayu_users?username=eq.'+encodeURIComponent(u)+'&select=*');
+    var rows=await r.json();
+    if(!rows.length){setMsg('账号不存在','err');return;}
+    var user=rows[0];
+    if(user.password!==p){setMsg('密码错误','err');return;}
+    if(user.status!=='active'){setMsg('账号已停用,请联系管理员','err');return;}
+    if(user.expire_at && new Date(user.expire_at)<new Date()){setMsg('账号已到期,请联系管理员','err');return;}
+    // 设备绑定
+    var dev=getDeviceId();
+    if(user.device_id && user.device_id!==dev){setMsg('此账号已绑定其他设备','err');return;}
+    if(!user.device_id){
+      // 首次登录,绑定设备
+      await sbFetch('dayu_users?id=eq.'+user.id,{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({device_id:dev})});
+    }
+    // 登录成功,存session
+    localStorage.setItem('dayu_session',JSON.stringify({username:u,ts:Date.now()}));
+    setMsg('登录成功!','ok');
+    setTimeout(function(){location.href='index.html';},500);
+  }catch(e){setMsg('网络错误,请重试','err');}
+}
+document.getElementById('p').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+// 已登录则直接进入
+(function(){
+  var s=localStorage.getItem('dayu_session');
+  if(s){try{var d=JSON.parse(s);if(d.username)location.href='index.html';}catch(e){}}
+})();
+</script>
+</body>
+</html>
