@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大禹热区 · 管理后台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0f1117;color:#e8eaed;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;padding:12px;max-width:900px;margin:0 auto;}
+h1{font-size:18px;color:#bb44ff;margin-bottom:12px;text-align:center;}
+.login-box{max-width:320px;margin:60px auto;background:#1a1d28;border:1px solid #363a4a;border-radius:12px;padding:24px;}
+.login-box input{width:100%;background:#0f1117;border:1px solid #363a4a;border-radius:8px;color:#fff;padding:12px;font-size:16px;margin-bottom:12px;outline:none;}
+.login-box button{width:100%;background:#bb44ff;color:#fff;border:none;border-radius:8px;padding:12px;font-size:16px;font-weight:700;cursor:pointer;}
+.panel{display:none;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.toolbar input{flex:1;min-width:120px;background:#1a1d28;border:1px solid #363a4a;border-radius:8px;color:#fff;padding:10px;outline:none;}
+.toolbar button{background:#bb44ff;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #2a2d3a;}
+th{color:#8a8f9c;font-weight:600;}
+.tag{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+.tag-on{background:rgba(74,222,128,.2);color:#4ade80;}
+.tag-off{background:rgba(248,113,113,.2);color:#f87171;}
+.act{display:flex;gap:4px;flex-wrap:wrap;}
+.act button{font-size:11px;padding:4px 8px;border-radius:6px;border:none;cursor:pointer;}
+.b-toggle{background:#3a3d4a;color:#fff;}
+.b-renew{background:#2563eb;color:#fff;}
+.b-unbind{background:#d97706;color:#fff;}
+.b-del{background:#dc2626;color:#fff;}
+.msg{text-align:center;padding:8px;font-size:13px;}
+</style>
+</head>
+<body>
+<h1>🎯 大禹热区 · 管理后台</h1>
+
+<div class="login-box" id="loginBox">
+  <input id="adminPw" type="password" placeholder="管理员密码">
+  <button onclick="adminLogin()">进入后台</button>
+  <div class="msg" id="loginMsg"></div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="toolbar">
+    <input id="newU" placeholder="新账号">
+    <input id="newP" placeholder="密码">
+    <input id="newDays" type="number" placeholder="有效天数(空=永久)">
+    <input id="newNote" placeholder="备注(客户名)">
+    <button onclick="addUser()">＋创建账号</button>
+  </div>
+  <div class="toolbar">
+    <button onclick="loadUsers()" style="background:#3a3d4a">🔄 刷新</button>
+    <button onclick="changeAdminPw()" style="background:#3a3d4a">🔑 改管理密码</button>
+  </div>
+  <div class="msg" id="msg"></div>
+  <table>
+    <thead><tr><th>账号</th><th>密码</th><th>状态</th><th>到期</th><th>设备</th><th>备注</th><th>操作</th></tr></thead>
+    <tbody id="userList"></tbody>
+  </table>
+</div>
+
+<script>
+var SB_URL='https://tutbopofnvehjofscnom.supabase.co';
+var SB_KEY='sb_publishable_1GZtvCsNlQFn2Xyi5cE9_Q_Sp87vKB9';
+function sbFetch(path,opts){
+  opts=opts||{};
+  opts.headers=Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'},opts.headers||{});
+  return fetch(SB_URL+'/rest/v1/'+path,opts);
+}
+
+async function adminLogin(){
+  var pw=document.getElementById('adminPw').value;
+  var r=await sbFetch('dayu_settings?key=eq.admin_pw&select=value');
+  var rows=await r.json();
+  if(rows.length && rows[0].value===pw){
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('panel').style.display='block';
+    loadUsers();
+  }else{
+    document.getElementById('loginMsg').textContent='密码错误';
+    document.getElementById('loginMsg').style.color='#f87171';
+  }
+}
+
+async function loadUsers(){
+  var r=await sbFetch('dayu_users?select=*&order=created_at.desc');
+  var users=await r.json();
+  var tb=document.getElementById('userList');
+  tb.innerHTML=users.map(function(u){
+    var exp=u.expire_at?new Date(u.expire_at).toLocaleDateString():'永久';
+    var expired=u.expire_at && new Date(u.expire_at)<new Date();
+    var statusTag=u.status==='active'?(expired?'<span class="tag tag-off">已到期</span>':'<span class="tag tag-on">启用</span>'):'<span class="tag tag-off">停用</span>';
+    var dev=u.device_id?'已绑定':'未绑定';
+    return '<tr>'+
+      '<td>'+u.username+'</td>'+
+      '<td>'+u.password+'</td>'+
+      '<td>'+statusTag+'</td>'+
+      '<td>'+exp+'</td>'+
+      '<td>'+dev+'</td>'+
+      '<td>'+(u.note||'')+'</td>'+
+      '<td><div class="act">'+
+        '<button class="b-toggle" onclick="toggleUser('+u.id+',\''+u.status+'\')">'+(u.status==='active'?'停用':'启用')+'</button>'+
+        '<button class="b-renew" onclick="renewUser('+u.id+')">续期</button>'+
+        '<button class="b-unbind" onclick="unbindUser('+u.id+')">解绑</button>'+
+        '<button class="b-del" onclick="delUser('+u.id+',\''+u.username+'\')">删除</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  document.getElementById('msg').textContent='共 '+users.length+' 个账号';
+}
+
+async function addUser(){
+  var u=document.getElementById('newU').value.trim();
+  var p=document.getElementById('newP').value.trim();
+  var days=document.getElementById('newDays').value.trim();
+  var note=document.getElementById('newNote').value.trim();
+  if(!u||!p){alert('账号和密码必填');return;}
+  var body={username:u,password:p,status:'active',note:note};
+  if(days){var d=new Date();d.setDate(d.getDate()+parseInt(days));body.expire_at=d.toISOString();}
+  var r=await sbFetch('dayu_users',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(body)});
+  if(r.ok){
+    document.getElementById('newU').value='';document.getElementById('newP').value='';
+    document.getElementById('newDays').value='';document.getElementById('newNote').value='';
+    loadUsers();
+  }else{alert('创建失败:账号可能已存在');}
+}
+
+async function toggleUser(id,status){
+  var newStatus=status==='active'?'disabled':'active';
+  await sbFetch('dayu_users?id=eq.'+id,{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({status:newStatus})});
+  loadUsers();
+}
+async function renewUser(id){
+  var days=prompt('续期天数(从今天起):','30');
+  if(!days)return;
+  var d=new Date();d.setDate(d.getDate()+parseInt(days));
+  await sbFetch('dayu_users?id=eq.'+id,{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({expire_at:d.toISOString()})});
+  loadUsers();
+}
+async function unbindUser(id){
+  if(!confirm('解绑设备?用户可在新设备登录'))return;
+  await sbFetch('dayu_users?id=eq.'+id,{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({device_id:null})});
+  loadUsers();
+}
+async function delUser(id,name){
+  if(!confirm('永久删除账号「'+name+'」?'))return;
+  await sbFetch('dayu_users?id=eq.'+id,{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+  loadUsers();
+}
+async function changeAdminPw(){
+  var np=prompt('新管理员密码:');
+  if(!np)return;
+  await sbFetch('dayu_settings?key=eq.admin_pw',{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({value:np})});
+  alert('管理密码已修改');
+}
+document.getElementById('adminPw').addEventListener('keydown',function(e){if(e.key==='Enter')adminLogin();});
+</script>
+</body>
+</html>
