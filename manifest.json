@@ -1,12 +1,12 @@
 {
-  "name": "大禹热区",
-  "short_name": "大禹热区",
+  "name": "大禹轮盘",
+  "short_name": "大禹轮盘",
   "description": "物理偏差热区追击系统",
   "start_url": "login.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f1117",
-  "theme_color": "#bb44ff",
+  "background_color": "#1a0808",
+  "theme_color": "#6b1010",
   "icons": [
     {
       "src": "icon-192.png",
