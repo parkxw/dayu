@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>大禹热区</title>
+<title>大禹轮盘</title>
 <style>
 :root{--bg:#0f1117;--s2:#1a1d28;--s3:#252836;--bd:#363a4a;--gold:#d4a843;--dim:#8a8f9c;--hot:#ff4444;--win:#4ade80;--lose:#f87171;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -423,11 +423,11 @@ function exportCur(){
   if(!t.data||!t.data.length){alert('当前盘暂无数据');return;}
   var obj={version:1,exportedAt:new Date().toISOString(),tbls:{}};
   obj.tbls[curId]={name:t.name,data:t.data};
-  showExport('导出当前盘：'+t.name+'（'+t.data.length+'局）','大禹热区_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.txt',obj);
+  showExport('导出当前盘：'+t.name+'（'+t.data.length+'局）','大禹轮盘_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.txt',obj);
 }
 function exportAll(){
   var cnt=Object.keys(tbls).length;
-  showExport('导出全部（'+cnt+'个盘）','大禹热区_全部备份_'+new Date().toISOString().slice(0,10)+'.txt',{version:1,exportedAt:new Date().toISOString(),tbls:tbls});
+  showExport('导出全部（'+cnt+'个盘）','大禹轮盘_全部备份_'+new Date().toISOString().slice(0,10)+'.txt',{version:1,exportedAt:new Date().toISOString(),tbls:tbls});
 }
 function importData(e){
   var f=e.target.files[0];if(!f)return;
