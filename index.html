@@ -156,7 +156,7 @@ function load(){
 function save(){localStorage.setItem('hotzone_tbls',JSON.stringify(tbls));localStorage.setItem('hotzone_cur',curId);}
 function getD(){return tbls[curId]?tbls[curId].data:[];}
 
-// 计算最热区(中心±3=7号)
+// 计算最热区(中心±3=7号)。若当前盘锁定了热区,直接返回锁定值
 function hottestZone(data){
   if(data.length<MIN_DATA)return null;
   var c={};data.forEach(function(n){c[n]=(c[n]||0)+1;});
@@ -211,9 +211,9 @@ function computeState(data,zoneSet){
       pnl-=BET_PER*NUM_COUNT;
       var lvl=curLevel();
       if(isHot){
-        // 中了
+        // 中了→立刻重新让牌(不等下一个热区号)
         pnl+=WIN_RETURN;wins++;rounds++;hitGames++;
-        phase='waiting';letCount=0;chaseCount=0;
+        phase='letting';letCount=0;chaseCount=0;
         curLoseStreak=0;
         missCount=0;l2round=0;  // 中了→重置回一级
       }else if(chaseCount>=CHASE){
@@ -395,15 +395,35 @@ function delTbl(){
   delete tbls[curId];curId=Object.keys(tbls)[0];render();
 }
 function switchTbl(id){curId=id;render();}
-function downloadJSON(filename,obj){
+var _expFname='';
+function showExport(title,filename,obj){
+  _expFname=filename;
   var text=JSON.stringify(obj);
+  var html='<div id="expMask" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">';
+  html+='<div style="background:var(--s2);border:1px solid var(--gold);border-radius:12px;padding:16px;width:100%;max-width:440px">';
+  html+='<div style="font-size:14px;font-weight:700;color:var(--gold);margin-bottom:10px">'+title+'</div>';
+  html+='<textarea id="expText" readonly style="width:100%;height:130px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:#fff;padding:10px;font-size:12px;outline:none;resize:none">'+text+'</textarea>';
+  html+='<div style="display:flex;gap:8px;margin-top:10px">';
+  html+='<button onclick="dlExp()" style="flex:1;background:var(--s3);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:10px;font-weight:700;cursor:pointer">下载文件</button>';
+  html+='<button onclick="cpExp(this)" style="flex:1;background:var(--gold);color:#000;border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">复制内容</button>';
+  html+='<button onclick="document.getElementById(\'expMask\').remove()" style="flex:1;background:var(--s3);color:var(--dim);border:1px solid var(--bd);border-radius:8px;padding:10px;cursor:pointer">关闭</button>';
+  html+='</div></div></div>';
+  var div=document.createElement('div');div.innerHTML=html;document.body.appendChild(div.firstChild);
+}
+function dlExp(){
+  var text=document.getElementById('expText').value;
   var blob=new Blob([text],{type:'application/json'});
   var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;a.download=filename;
-  document.body.appendChild(a);
-  a.click();
+  var a=document.createElement('a');a.href=url;a.download=_expFname;
+  document.body.appendChild(a);a.click();
   setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
+function cpExp(btn){
+  var ta=document.getElementById('expText');
+  ta.focus();ta.select();
+  var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+  if(ok){btn.textContent='已复制!';}
+  else if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(function(){btn.textContent='已复制!';});}
 }
 function exportCur(){
   var t=tbls[curId];
@@ -411,10 +431,11 @@ function exportCur(){
   if(!t.data||!t.data.length){alert('当前盘暂无数据');return;}
   var obj={version:1,exportedAt:new Date().toISOString(),tbls:{}};
   obj.tbls[curId]={name:t.name,data:t.data};
-  downloadJSON('大禹热区_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.json',obj);
+  showExport('导出当前盘：'+t.name+'（'+t.data.length+'局）','大禹热区_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.json',obj);
 }
 function exportAll(){
-  downloadJSON('大禹热区_备份_'+new Date().toISOString().slice(0,10)+'.json',{version:1,exportedAt:new Date().toISOString(),tbls:tbls});
+  var cnt=Object.keys(tbls).length;
+  showExport('导出全部（'+cnt+'个盘）','大禹热区_全部备份_'+new Date().toISOString().slice(0,10)+'.json',{version:1,exportedAt:new Date().toISOString(),tbls:tbls});
 }
 function importData(e){
   var f=e.target.files[0];if(!f)return;
