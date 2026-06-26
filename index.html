@@ -395,18 +395,26 @@ function delTbl(){
   delete tbls[curId];curId=Object.keys(tbls)[0];render();
 }
 function switchTbl(id){curId=id;render();}
+function downloadJSON(filename,obj){
+  var text=JSON.stringify(obj);
+  var blob=new Blob([text],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},100);
+}
 function exportCur(){
   var t=tbls[curId];
   if(!t){alert('没有可导出的盘');return;}
   if(!t.data||!t.data.length){alert('当前盘暂无数据');return;}
   var obj={version:1,exportedAt:new Date().toISOString(),tbls:{}};
   obj.tbls[curId]={name:t.name,data:t.data};
-  var blob=new Blob([JSON.stringify(obj)],{type:'application/json'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='大禹热区_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  downloadJSON('大禹热区_'+t.name+'_'+new Date().toISOString().slice(0,10)+'.json',obj);
 }
 function exportAll(){
-  var blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),tbls:tbls})],{type:'application/json'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='大禹热区_备份_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  downloadJSON('大禹热区_备份_'+new Date().toISOString().slice(0,10)+'.json',{version:1,exportedAt:new Date().toISOString(),tbls:tbls});
 }
 function importData(e){
   var f=e.target.files[0];if(!f)return;
