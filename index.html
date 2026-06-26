@@ -263,7 +263,7 @@ function renderStreakBox(hz){
   var win=data.length>200?data.slice(data.length-200):data;
   var s=computeState(win,hz.zone);
   var n=s.curLoseStreak;
-  var color=n>=5?'#f87171':(n>=3?'#fbbf24':'#4ade80');
+  var color='#ffffff';
   el.innerHTML='<div style="width:50%;margin:0 auto 10px;background:var(--s2);border:2px solid '+color+';border-radius:8px;padding:8px;text-align:center"><div style="font-size:26px;font-weight:900;color:'+color+'">'+n+'</div></div>';
 }
 function renderRecHint(hz){
@@ -278,8 +278,8 @@ function renderRecHint(hz){
   }
   var txt='',bcolor='',anim='',label='';
   if(cur.phase==='letting'){
-    // 让牌中:用当前级别的颜色显示让牌进度
-    bcolor=cur.level===2?'#bb44ff':'#ff44cc';
+    // 让牌中:白色框
+    bcolor='#ffffff';
     txt=cur.letCount+'/'+LET;
   }else if(cur.phase==='betting'){
     if(cur.level===2){
