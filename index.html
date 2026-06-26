@@ -263,8 +263,8 @@ function renderStreakBox(hz){
   var win=data.length>200?data.slice(data.length-200):data;
   var s=computeState(win,hz.zone);
   var n=s.curLoseStreak;
-  var color='#ffffff';
-  el.innerHTML='<div style="width:50%;margin:0 auto 10px;background:var(--s2);border:2px solid '+color+';border-radius:8px;padding:8px;text-align:center"><div style="font-size:26px;font-weight:900;color:'+color+'">'+n+'</div></div>';
+  var color='#3b82f6';
+  el.innerHTML='<div style="width:25%;margin:0 auto 10px;background:var(--s2);border:2px solid '+color+';border-radius:8px;padding:6px;text-align:center"><div style="font-size:22px;font-weight:900;color:'+color+'">'+n+'</div></div>';
 }
 function renderRecHint(hz){
   var el=document.getElementById('recHint');
