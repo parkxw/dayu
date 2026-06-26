@@ -238,13 +238,16 @@ function computeState(data,zoneSet){
           betGames:betGames,hitGames:hitGames,maxLoseStreak:maxLoseStreak,maxGap:maxGap,curLoseStreak:curLoseStreak};
 }
 
+var STAT_WINDOW=11100;
+function statData(){var d=getD();return d.length>STAT_WINDOW?d.slice(d.length-STAT_WINDOW):d;}
 function render(){
   renderTblBar();
   var data=getD();
-  var hz=hottestZone(data);
+  var sdata=statData();
+  var hz=hottestZone(sdata);
   var betting=false,betLevel=1;
   if(hz){
-    var state=computeState(data,hz.zone);
+    var state=computeState(sdata,hz.zone);
     betting=(state.cur.phase==='betting');
     betLevel=state.cur.level;
   }
@@ -302,7 +305,7 @@ function toggleBacktest(){
   backtestOn=!backtestOn;
   var el=document.getElementById('backtestPanel');
   if(!backtestOn){el.innerHTML='';return;}
-  var data=getD();
+  var data=statData();
   var hz=hottestZone(data);
   if(!hz){el.innerHTML='<div style="background:var(--s2);border-radius:8px;padding:12px;font-size:12px;color:var(--dim)">数据不足(至少'+MIN_DATA+'局),无法回测</div>';return;}
   var s=computeState(data,hz.zone);
@@ -319,6 +322,34 @@ function toggleBacktest(){
   h+=row('最大连黑(整轮没中)',s.maxLoseStreak+' 次',s.maxLoseStreak>=8?'#f87171':'');
   h+=row('热区号最长不出',s.maxGap+' 局',s.maxGap>=40?'#f87171':'');
   h+='</div>';
+  // ===== 最近11100局(每号平均300次)显著性监测 =====
+  var W=11100;
+  if(data.length>=2000){
+    var win=data.length>W?data.slice(data.length-W):data;
+    var hzW=hottestZone(win);
+    if(hzW){
+      var sw=computeState(win,hzW.zone);
+      var bgW=sw.betGames,hgW=sw.hitGames;
+      var pW=bgW?hgW/bgW:0;
+      var p0=7/37;
+      var se=Math.sqrt(p0*(1-p0)/bgW);
+      var z=se>0?(pW-p0)/se:0;
+      // 正态单尾p值(用误差函数近似)
+      function normcdf(x){var t=1/(1+0.2316419*Math.abs(x));var d=0.3989423*Math.exp(-x*x/2);var p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>0?1-p:p;}
+      var pval=1-normcdf(z);
+      var sig=pval<0.05;
+      var hitW=(pW*100).toFixed(1);
+      var col=sig?'#4ade80':'#f87171';
+      h+='<div style="background:var(--s2);border:1px solid '+col+';border-radius:8px;padding:12px;font-size:13px;margin-top:10px">';
+      h+='<div style="font-size:13px;font-weight:900;color:'+col+';text-align:center;margin-bottom:8px">最近'+win.length+'局 偏差监测</div>';
+      h+='<div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px">热区: '+hzW.zoneArr.join(' ')+'</div>';
+      h+=row('下注次数',bgW+' 次');
+      h+=row('命中率',hitW+'% (保本18.9%)',pW>=p0?'#4ade80':'#f87171');
+      h+=row('显著性 p值',pval.toFixed(4),col);
+      h+='<div style="text-align:center;margin-top:8px;font-weight:900;color:'+col+'">'+(sig?'✅ 偏差显著 · 可信':'❌ 不显著 · 可能是运气')+'</div>';
+      h+='</div>';
+    }
+  }
   el.innerHTML=h;
 }
 
