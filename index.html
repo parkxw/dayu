@@ -107,6 +107,7 @@ h1{font-size:17px;text-align:center;color:var(--gold);margin-bottom:10px;}
 <div class="tools">
   <button onclick="exportCur()">导出当前</button>
   <button onclick="exportAll()">导出全部</button>
+  <button onclick="copyAllData(this)">复制数据</button>
   <button onclick="document.getElementById('impFile').click()">导入文件</button>
   <input type="file" id="impFile" style="display:none" accept=".json" onchange="importData(event)">
 </div>
@@ -425,6 +426,17 @@ function delTbl(){
 }
 function switchTbl(id){curId=id;render();}
 var _expFname='';
+function copyAllData(btn){
+  var text=JSON.stringify({version:1,exportedAt:new Date().toISOString(),tbls:tbls});
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+  document.body.removeChild(ta);
+  if(ok){btn.textContent='✅已复制';setTimeout(function(){btn.textContent='复制数据';},1500);}
+  else if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){btn.textContent='✅已复制';setTimeout(function(){btn.textContent='复制数据';},1500);});}
+  else{alert('复制失败,请用导出文件');}
+}
 function downloadJSON(filename,obj){
   var blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob);
