@@ -318,7 +318,7 @@ function toggleBacktest(){
   function row(label,val,color){return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--dim)">'+label+'</span><span style="font-weight:700;'+(color?'color:'+color:'')+'">'+val+'</span></div>';}
   h+=row('总轮数',s.rounds+' 轮');
   h+=row('胜率(每轮)',winRate+'%',winRate>=50?'#4ade80':'#f87171');
-  h+=row('单局命中率',hitRate+'% (保本18.9%)',hitRate>=18.9?'#4ade80':'#f87171');
+  h+=row('单局命中率',hitRate+'%',hitRate>=18.9?'#4ade80':'#f87171');
   h+=row('最大连黑(整轮没中)',s.maxLoseStreak+' 次',s.maxLoseStreak>=8?'#f87171':'');
   h+=row('热区号最长不出',s.maxGap+' 局',s.maxGap>=40?'#f87171':'');
   h+='</div>';
@@ -344,9 +344,8 @@ function toggleBacktest(){
       h+='<div style="font-size:13px;font-weight:900;color:'+col+';text-align:center;margin-bottom:8px">最近'+win.length+'局 偏差监测</div>';
       h+='<div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px">热区: '+hzW.zoneArr.join(' ')+'</div>';
       h+=row('下注次数',bgW+' 次');
-      h+=row('命中率',hitW+'% (保本18.9%)',pW>=p0?'#4ade80':'#f87171');
+      h+=row('命中率',hitW+'%',pW>=p0?'#4ade80':'#f87171');
       h+=row('显著性 p值',pval.toFixed(4),col);
-      h+='<div style="text-align:center;margin-top:8px;font-weight:900;color:'+col+'">'+(sig?'✅ 偏差显著 · 可信':'❌ 不显著 · 可能是运气')+'</div>';
       h+='</div>';
     }
   }
